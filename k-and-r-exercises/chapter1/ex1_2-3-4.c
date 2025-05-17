@@ -8,13 +8,6 @@ void convert(int lower, int upper, int step);
 
 int main() {
 	convert(LOWER, UPPER, STEP);
-
-	// while (fahr <= upper) {
-	// 	celsius = 5.0 * (fahr - 32.0) / 9.0;
-	// 	printf("|%6.0f C\t|%6.0f F\t|\n", fahr, celsius);
-	// 	printf("-------------------------\n");
-	// 	fahr = fahr + step;
-	// }
 }
 
 void convert(int lower, int upper, int step) {
