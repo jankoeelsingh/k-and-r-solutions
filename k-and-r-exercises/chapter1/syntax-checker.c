@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "../helpers/stack.h"
 
 // State machine
 #define NORMAL              0
@@ -14,7 +15,7 @@
 void syntax_checker(char text[]);
 
 int main() {
-    char text[] = "printf(\"Hello World\");";
+    char text[] = "printf((\"Hello World\")));";
 
     syntax_checker(text);
 
@@ -25,6 +26,10 @@ void syntax_checker(char text[]) {
     int state = NORMAL;
     char tempText[ARR_SIZE];
     int i, j;
+    Stack parentheses, braces, brackets;
+    init_stack(&parentheses);
+    init_stack(&braces);
+    init_stack(&brackets);
 
     memset(tempText, 0, ARR_SIZE);
 
@@ -35,16 +40,18 @@ void syntax_checker(char text[]) {
             case NORMAL:
             // Don't track state for braces and such, track count or use a stack
             // Because they can be nested
+
+            // Now repeat this and clean it up
                 if (text[i] == '(') {
-                    state = IN_PARENTHESES;
                     tempText[j++] = text[i];
+                    push(&parentheses, '(');
                 }
-                else if (text[i] == '[') {
-                    state = IN_BRACKETS;
-                    tempText[j++] = text[i];
-                }
-                else if (text[i] == '{') {
-                    state = IN_BRACES;
+                else if (text[i] == ')') {
+                    if (is_empty(&parentheses)) {
+                        printf("Syntax error: Unmatched parentheses!\n");
+                        return;
+                    }
+                    pop(&parentheses);
                     tempText[j++] = text[i];
                 }
                 else if (text[i] == '\'') {
@@ -57,27 +64,6 @@ void syntax_checker(char text[]) {
                 }
                 else {
                     tempText[j++] = text[i];
-                }
-                break;
-
-            case IN_PARENTHESES:
-                tempText[j++] = text[i];
-                if (text[i] == ')') {
-                    state = NORMAL;
-                }
-                break;
-            
-            case IN_BRACKETS:
-                tempText[j++] = text[i];
-                if (text[i] == ']') {
-                    state = NORMAL;
-                }
-                break;
-
-            case IN_BRACES:
-                tempText[j++] = text[i];
-                if (text[i] == '}') {
-                    state = NORMAL;
                 }
                 break;
             
