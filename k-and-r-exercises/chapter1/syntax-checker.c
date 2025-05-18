@@ -1,21 +1,15 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "../helpers/stack.h"
 
-// State machine
-#define NORMAL              0
-#define IN_PARENTHESES      1
-#define IN_BRACKETS         2
-#define IN_BRACES           3
-#define IN_SINGLE_QUOTES    4
-#define IN_DOUBLE_QUOTES    5
 // Escape seq and comments
 #define ARR_SIZE            1024
 
 void syntax_checker(char text[]);
 
 int main() {
-    char text[] = "printf((\"Hello World\")));";
+    char text[] = "printf(\"Hello World\");";
 
     syntax_checker(text);
 
@@ -23,9 +17,10 @@ int main() {
 }
 
 void syntax_checker(char text[]) {
-    int state = NORMAL;
     char tempText[ARR_SIZE];
     int i, j;
+    bool inSingleQuotes = false;
+    bool inDoubleQuotes = false;
     Stack parentheses, braces, brackets;
     init_stack(&parentheses);
     init_stack(&braces);
@@ -36,50 +31,52 @@ void syntax_checker(char text[]) {
     i = j = 0;
 
     while (text[i] != '\0') {
-        switch (state) {
-            case NORMAL:
-            // Don't track state for braces and such, track count or use a stack
-            // Because they can be nested
-
-            // Now repeat this and clean it up
-                if (text[i] == '(') {
-                    tempText[j++] = text[i];
-                    push(&parentheses, '(');
-                }
-                else if (text[i] == ')') {
-                    if (is_empty(&parentheses)) {
-                        printf("Syntax error: Unmatched parentheses!\n");
-                        return;
-                    }
-                    pop(&parentheses);
-                    tempText[j++] = text[i];
-                }
-                else if (text[i] == '\'') {
-                    state = IN_SINGLE_QUOTES;
-                    tempText[j++] = text[i];
-                }
-                else if (text[i] == '"') {
-                    state = IN_DOUBLE_QUOTES;
-                    tempText[j++] = text[i];
-                }
-                else {
-                    tempText[j++] = text[i];
-                }
-                break;
-            
-            case IN_SINGLE_QUOTES:
-                tempText[j++] = text[i];
-                if (text[i] == '\'') {
-                    state = NORMAL;
-                }
-                break;
-
-            case IN_DOUBLE_QUOTES:
-                tempText[j++] = text[i];
-                if (text[i] == '"') {
-                    state = NORMAL;
-                }
-                break;
+        if (text[i] == '(') {
+            tempText[j++] = text[i];
+            push(&parentheses, '(');
+        }
+        else if (text[i] == ')') {
+            if (is_empty(&parentheses)) {
+                printf("Syntax error: Unmatched parentheses!\n");
+                return;
+            }
+            pop(&parentheses);
+            tempText[j++] = text[i];
+        }
+        else if (text[i] == '[') {
+            tempText[j++] = text[i];
+            push(&brackets, '[');
+        }
+        else if (text[i] == ']') {
+            if (is_empty(&brackets)) {
+                printf("Syntax error: Unmatched brackets!\n");
+                return;
+            }
+            pop(&brackets);
+            tempText[j++] = text[i];
+        }
+        else if (text[i] == '{') {
+            tempText[j++] = text[i];
+            push(&braces, '{');
+        }
+        else if (text[i] == '}') {
+            if (is_empty(&braces)) {
+                printf("Syntax error: Unmatched braces!\n");
+                return;
+            }
+            pop(&braces);
+            tempText[j++] = text[i];
+        }
+        else if (text[i] == '\'') {
+            inSingleQuotes = !inSingleQuotes;
+            tempText[j++] = text[i];
+        }
+        else if (text[i] == '\"') {
+            inDoubleQuotes = !inDoubleQuotes;
+            tempText[j++] = text[i];
+        }
+        else {
+            tempText[j++] = text[i];
         }
 
         i++;
@@ -87,10 +84,22 @@ void syntax_checker(char text[]) {
 
     tempText[j] = '\0';
 
-    if (state == NORMAL) {
-        printf("%s\n", tempText);
+    if (!is_empty(&parentheses)) {
+        printf("Syntax error: Unmatched parentheses!\n");
+    }
+    else if (!is_empty(&brackets)) {
+        printf("Syntax error: Unmatched brackets!\n");
+    }
+    else if (!is_empty(&braces)) {
+        printf("Syntax error: Unmatched braces!\n");
+    }
+    else if (inSingleQuotes) {
+        printf("Syntax error: Improper use of single quotes!\n");
+    }
+    else if (inDoubleQuotes) {
+        printf("Syntax error: Improper use of double quotes!\n");
     }
     else {
-        printf("Syntax error!");
+        printf("%s\n", tempText);
     }
 }
